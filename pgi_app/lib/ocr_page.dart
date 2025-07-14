@@ -15,6 +15,10 @@ class _OCRPageState extends State<OCRPage> {
   String? _extractedText;
   bool _isLoading = false;
 
+  late final TextRecognizer _textRecognizer = TextRecognizer(
+    script: TextRecognitionScript.latin,
+  );
+
   Future<void> _openCamera() async {
     final status = await Permission.camera.request();
     if (status != PermissionStatus.granted) {
@@ -25,7 +29,9 @@ class _OCRPageState extends State<OCRPage> {
       }
       return;
     }
-    final pickedFile = await ImagePicker().pickImage(source: ImageSource.camera);
+    final pickedFile = await ImagePicker().pickImage(
+      source: ImageSource.camera,
+    );
     if (pickedFile != null) {
       await _processImage(File(pickedFile.path));
     }
@@ -36,12 +42,16 @@ class _OCRPageState extends State<OCRPage> {
     if (status != PermissionStatus.granted) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Gallery access permission is required')),
+          const SnackBar(
+            content: Text('Gallery access permission is required'),
+          ),
         );
       }
       return;
     }
-    final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
+    final pickedFile = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+    );
     if (pickedFile != null) {
       await _processImage(File(pickedFile.path));
     }
@@ -54,7 +64,9 @@ class _OCRPageState extends State<OCRPage> {
     });
     final inputImage = InputImage.fromFile(imageFile);
     try {
-      final RecognizedText recognizedText = await _textRecognizer.processImage(inputImage);
+      final RecognizedText recognizedText = await _textRecognizer.processImage(
+        inputImage,
+      );
       String formatted = _formatRecognizedText(recognizedText);
       setState(() {
         _extractedText = formatted;
@@ -68,9 +80,7 @@ class _OCRPageState extends State<OCRPage> {
         _extractedText = 'Failed to recognize text: $e';
         _isLoading = false;
       });
-    } finally {
-      textRecognizer.close();
-    }
+    } finally {}
   }
 
   String _formatRecognizedText(RecognizedText recognizedText) {
@@ -83,6 +93,12 @@ class _OCRPageState extends State<OCRPage> {
       buffer.writeln();
     }
     return buffer.toString().trim();
+  }
+
+  @override
+  void dispose() {
+    _textRecognizer.close();
+    super.dispose();
   }
 
   @override
@@ -120,8 +136,7 @@ class _OCRPageState extends State<OCRPage> {
               onTap: _pickFromGallery,
             ),
             const SizedBox(height: 32),
-            if (_isLoading)
-              const Center(child: CircularProgressIndicator()),
+            if (_isLoading) const Center(child: CircularProgressIndicator()),
             if (_extractedText != null && !_isLoading)
               Expanded(
                 child: SingleChildScrollView(
